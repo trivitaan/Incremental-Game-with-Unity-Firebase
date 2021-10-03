@@ -61,48 +61,56 @@ public static class UserDataManager
         return index + 1 <= Progress.ResourcesLevels.Count;
     }
 
-    public static IEnumerator LoadFromCloud(System.Action onComplete)
+    public static IEnumerator LoadFromCloud (System.Action onComplete)
     {
-        StorageReference targetStorage = GetTargetCloudStorage();
+        StorageReference targetStorage = GetTargetCloudStorage ();
 
         bool isCompleted = false;
         bool isSuccessfull = false;
-        const long maxAllowedSize = 1024 * 1024; //sama dengan 1 mb
-        targetStorage.GetBytesAsync(maxAllowedSize).ContinueWith((Task<byte[]> task) =>
+        const long maxAllowedSize = 1024 * 1024; // Sama dengan 1 MB
+
+        targetStorage.GetBytesAsync (maxAllowedSize).ContinueWith ((Task<byte[]> task) =>
         {
-            if(!task.IsFaulted)
+            if (!task.IsFaulted)
             {
-                string json = Encoding.Default.GetString(task.Result);
+                string json = Encoding.Default.GetString (task.Result);
                 Progress = JsonUtility.FromJson<UserProgressData> (json);
                 isSuccessfull = true;
             }
+
             isCompleted = true;
         });
 
-        while(!isCompleted)
+        while (!isCompleted)
         {
             yield return null;
         }
 
-        //jika sukses mendownload, maka simpan data hasil download 
-        if(isSuccessfull)
+        // Jika sukses mendownload, maka simpan data hasil download
+
+        if (isSuccessfull)
         {
-            Save();
+            Save ();
         }
         else
         {
-            LoadFromLocal(); //jika tidak ditemukan di cloud maka load dari penyimpanan lokal 
+            // Jika tidak ada data di cloud, maka load data dari local
+            LoadFromLocal ();
         }
-        onComplete?.Invoke();
+
+ 
+
+        onComplete?.Invoke ();
     }
 
-    private static StorageReference GetTargetCloudStorage()
+    private static StorageReference GetTargetCloudStorage ()
     {
-        //Gunakan Device ID sebagai nama file yang akan disimpan dalam cloud
+
+        // Gunakan Device ID sebagai nama file yang akan disimpan di cloud
         string deviceID = SystemInfo.deviceUniqueIdentifier;
         FirebaseStorage storage = FirebaseStorage.DefaultInstance;
+        return storage.GetReferenceFromUrl ($"{storage.RootReference}/{deviceID}");
 
-        return storage.GetReferenceFromUrl($"{storage.RootReference}/{deviceID}");
     }
 
 }
